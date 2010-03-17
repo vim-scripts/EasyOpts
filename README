@@ -1,0 +1,8 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=3020
+
+EasyOpts simplify the options management to other plugins through some facilities:
+ - allow the plugin to initialize all the user-exposed variables to a predefined value (if not already specified).
+ - allow the user to change the option values through a simple menu
+ - check if the values specified by the user are correct
+
+Full documentation about how to use the plugin is provided in the help file and is demoed through some examples

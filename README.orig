@@ -1,0 +1,25 @@
+--- easyopts ---
+Easyopts is a plugin for Vim which could be used to write other plugins.
+
+This plugin comes with the ideas of simplify the options management when
+writing others plugins. Therefore, unless you are writing a plugin, you won't
+need this plugin.
+
+The aim of this plugin is to ensure that all requested variables are setted with
+correct values and to provide an easy menu for following changes.
+
+-- Examples --
+In the examples folder is available one example.
+To try it do as follow:
+    1. Load the plugin
+    2. Source the example file
+        :source <example-file>
+    3. Initialize all the variables
+        :call EasyOpts_Init( g:uservars )
+    4. Open the menu:
+	:call EasyOpts_Menu_Open( "Test", g:uservars )
+
+Now you have the options menu open. To close it use :bd.
+Don't forget to try the autocompletion function for the Zodiac
+
+

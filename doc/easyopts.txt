@@ -1,0 +1,250 @@
+*easyopts.txt*      For Vim version 7.0. 
+
+Author:	        HoX                             September 25, 2009
+Version:        0.1
+
+For instructions on installing this file, type
+	:help add-local-help |add-local-help| inside Vim.
+    
+
+==============================================================================
+1. Contents                                     *easyopts* *easyopts-contents*
+
+    1. Contents...............................: |easyopts-contents|
+    2. Description............................: |easyopts-description|
+    3. Variable management....................: |easyopts-varmanage|
+       3.1 Variables struct...................: |easyopts-varstruct|
+       3.2 Supported types....................: |easyopts-vartypes|
+       3.3 Custom types.......................: |easyopts-customtypes|
+    4. Commands...............................: |easyopts-commands|
+       4.1 EasyOpts_Init......................: |easyopts-initfunc|
+       4.2 EasyOpts_Menu_Open.................: |easyopts-menuopen|
+       4.3 EasyOpts_Menu_Close................: |easyopts-menuclose|
+    5. Usage .................................: |easyopts-usage|
+       5.1 Example 1..........................: |easyopts-example1|
+    6. History................................: |easyopts-history|  
+
+==============================================================================
+2. Description                                          *easyopts-description*
+
+This plugin comes with the ideas of simplify the options management when
+writing others plugins. Therefore, unless you are writing a plugin, you won't
+need to read this help.
+
+The aim of this plugin is to ensure that all requested variables are setted with
+correct values and to provide an easy menu for following changes. 
+
+==============================================================================
+3. Variable management                                    *easyopts-varmanage*
+
+EasyOpts provides supports for different variable types (see
+|easyopts-vartypes|) and it allows to define your own types (see
+|easyopts-customtypes|). Each requested variable should be described through
+the variables struct (see |easyopts-varstruct|).
+
+3.1 Variables struct                                      *easyopts-varstruct*
+
+The Variables struct is simply a |List| of |List|s. Each sublist describes the
+four parameter of a variable: name, type, variable name, default value.
+The format of a sublist is the following: >
+
+	[ Description, Type, Variable, Default Value ]
+
+< each one of them must be a string. More in depth:
+
+   - Description is the name which will be used in the menu. If you won't use
+    menu, you won't need this;
+   - Type is one of the types listed in the chapter 3.2 (see
+    |easyopts-vartypes|) or a custom types (see |easyopts-customtypes|);
+   - Variable is the name of the variable as recognized by vim;
+   - Default value is the value assigned to the variable if any other value is
+    setted or if the current value isn't allowed for the type.
+
+As example, if I want to describes the user, I will have this: >
+
+	let uservars = [ 
+		\[ "Name", "string", "g:user_name", "Goofy" ],
+		\[ "Age", "integer", "g:user_age", "18" ],
+		\[ "Home directory", "path", "g:user_home", "/home/goofy" ]
+	\]
+
+<
+
+3.2 Supported types                                       *easyopts-vartypes*
+
+In this version of the plugin there are five supported types: boolean, float,
+integer, path, and string.
+	
+    - Boolean: it could have 0 or 1 as value, but in the menu it shows "true"
+     and false;
+    - Float: a floating number in the format [-]xx.yyy. A more accurate
+     definition will be provided in the next versions of the plugin;
+    - Integer: an integer number in the [-]x* format;
+    - Path: a system path. It provides auto-completion while reading it from
+     the menu, but it doesn't make any check about the file existence;
+    - String: a string. This is also the fallback type when an unhandled type
+     is requested.
+
+3.3 Custom types                                        *easyopts-customtypes*
+
+If you need a new type, you can simply add by defining three functions for it.
+The functions you need are:
+
+ - EasyOpts_Get_Option_Type_[Yourtype] ( name, current ): this function is
+  used when you read a new value from the menu. 'name' is the description of
+  the variable and should be used when asking the new value to the user.
+  'current' is the current value and should be used when the new value
+  inserted by the user is not allowed for the type. It must return the new
+  value;
+
+ - EasyOpts_Put_Option_Type_[Yourtype] ( value ): this function is used when
+  you show a value in the menu. It take the 'value' and convert it in the
+  proprer format (for example in the type Boolean it converts 0 to 'false' and
+  1 to 'true' ). It must return the correctly formatted value;
+
+ - EasyOpts_Check_Option_Type_[Yourtype] ( value ): check if 'value' is
+   allowed by the type. It returns 1 if it's allowed, 0 otherwise
+
+The format of [Yourtype] must always be with the first letter uppercase and
+all the others lowercase.
+
+==============================================================================
+4. Commands                                                *easyopts-commands*
+
+If you want to use EasyOpts, you should learn how to use only three simple
+functions.
+
+4.1 EasyOpts_Init                                          *easyopts-initfunc*
+	
+EasyOpts_Init(varstruct) initialize all the undeclared variables to their default
+values. If a variable is already defined, it won't be changed, so it preserve
+the user configuration.
+The only parameter needed by this function is the variables struct (see
+|easyopts-varstruct|).
+
+4.2 EasyOpts_Menu_Open                                     *easyopts-menuopen*
+
+EasyOpts_Menu_Open(title,varstruct) show the menu with all the variables and
+their current value. By pressing <Enter> over one of them, the user could
+change its value.
+This function need two parameters: 'title' is a string and will be used as
+title for the menu, 'varstruct' is the variables struct (see
+|easyopts-varstruct|).
+
+4.3 EasyOpts_Menu_Close                                   *easyopts-menuclose*
+
+EasyOpts_Menu_Close() simply close the buffer with the menu. It's suggested to
+close the menu using this function rather then close the buffer with
+|bdelete|. This functions doesn't need any parameter and return 1 if a menu is
+closed or 0 otherwise.
+
+==============================================================================
+5. Usage                                                      *easyopts-usage*
+
+Here some simple examples about how to use the EasyOpts plugin.
+
+5.1 Example 1                                              *easyopts-example1*
+
+This example show how to use the plugin inside your own plugin. In this case I
+want to print the name of the user (author of the file), his age, his sex and
+his zodiac. For the zodiac I'll declare a new variable type (see
+|easyopts-customtypes| )..
+First of all I must declare the variables struct >
+
+    let userdesc = [
+			\[ "Name", "string", "g:user_name", "Goofy" ],
+			\[ "Age", "integer", "g:user_age", 30 ],
+			\[ "Height", "float", "g:user_height", "1.75" ],
+			\[ "Male", "boolean", "g:user_sex", 0 ],
+			\[ "Zodiac", "zodiac", "g:user_zodiac", "Aries" ],
+			\[ "Home directory", "path", "g:user_home", "/home/goofy" ]
+    \]
+
+<
+
+Then I must initialize all the variables through the proper function (see
+|easyopts-initfunc|). I'll also write a new function to open (see 
+|easyopts-menuopen|) and close (see |easyopts-menuclose|) the menu, switching
+its current status >
+
+    function s:Switch_Menu_Status ()
+        if EasyOpts_Menu_Close () == 0
+            EasyOpts_Menu_Open ( "Author description", userdesc )
+        endif
+    enfunction
+
+    EasyOpts_Init ( userdesc )
+    command!        -nargs=0 Switch_Menu_Status :call s:Switch_Menu_Status()
+
+<
+
+The work is almost done. The last thing is the declaration of the type
+"zodiac" or I'll get an error. 
+
+The implementation of the get-functions is really simple in this case. It
+simply ask to the user to insert a value for the zodiac type. If you want to
+do it better, you could put a completion function for the input. I don't need
+to know the current value, because I let the plugin check it automatically >
+
+    let s:zodiacs = [ 
+        \"Aries", "Taurus", "Gemini", "Cancer", 
+        \"Leo", "Virgo", "Libra", "Scorpio", 
+        \"Sagittarius", "Capricorn", "Acquarius", "Pisces"
+    \]
+
+    function Zodiac_complete ( ArgLead, CmdLine, CursorPos )
+        let retList = []
+
+        for i in s:zodiacs 
+            if match ( i, "^".a:ArgLead.".*" ) != -1
+                call add( retList, i )
+            endif
+        endfor 
+
+        return retList
+    endfunction
+
+    function EasyOpts_Get_Option_Type_Zodiac ( name, current )
+    	return input ( "Insert the value for '".a:name."': ", "", "customlist,Zodiac_complete" )
+    endfunction
+
+<
+
+After reading the value, the EasyOpts plugin check its value internally. If it
+is correct, the new value is assigned to the variable, otherwise an error is
+shown and the previous value is used. In this example I'll check if the zodiac
+is known. >
+	
+    function EasyOpts_Check_Option_Type_Zodiac ( value )
+		if index ( s:zodiacs, a:value ) == -1
+			return 0
+		else
+			return 1
+		endif
+	endfunction
+
+<
+
+In the end I should implement the put-function. I'll simply return the value.
+>
+
+	function EasyOpts_Put_Option_Type_Zodiac ( value )
+        return a:value
+	endfunction
+
+<
+
+That's all!
+
+==============================================================================
+6. History                                                  *easyopts-history*  
+
+    Release 0.1
+     - First release of the plugin
+         Features:
+            * Five built-in types: Boolean, Float, Integer, Path, String
+            * New type customization
+            * Variable initialization 
+            * Easy to use menu for editing variables
+
+vim: ts=4 ft=help tw=78
