@@ -8,6 +8,11 @@ need this plugin.
 The aim of this plugin is to ensure that all requested variables are setted with
 correct values and to provide an easy menu for following changes.
 
+Latest version of the plugin could be find here:
+	http://www.vim.org/scripts/script.php?script_id=3020
+Development repositories is located here:
+	http://github.com/HoX/EasyOpts
+
 -- Examples --
 In the examples folder is available one example.
 To try it do as follow:
@@ -19,7 +24,7 @@ To try it do as follow:
     4. Open the menu:
 	:call EasyOpts_Menu_Open( "Test", g:uservars )
 
-Now you have the options menu open. To close it use :bd.
+Now you have the options menu open..
 Don't forget to try the autocompletion function for the Zodiac
 
 

@@ -1,14 +1,26 @@
 " easyopts.vim - Easy Options Management
 " ---------------------------------------------------------------
-" Version:  0.1
+" Version:  0.2
 " Authors:  HoX <mail2hox@gmail.com>
-" Last Modified: 2009 Sept 25
-" Script:   Still doesn't known
+" Last Modified: 2010 apr 07 14:42:25
+" Script:   http://www.vim.org/scripts/script.php?script_id=3020
 " License:  GPL (Gnu Public License)
+"
+" A special thanks to Alessandro who helps me when Vim doesn't
 
-let g:easyopts_version = 001
-
+let g:easyopts_version = 002
 let g:easyopts_known_types = [  "Boolean", "String", "Integer", "Float", "Path" ]
+
+
+" Load previously saved options
+let s:easyopts_savefile = $HOME."/.vim/easyopts.sav"
+
+if filereadable ( s:easyopts_savefile )
+	silent! execute "source ".s:easyopts_savefile
+endif
+
+" Buffer number
+let s:current_menu_buffer = -1
 
  """""""""""""""
 " Var Functions "
@@ -29,7 +41,7 @@ function s:Get_Callback ( action, type )
 
 	if exists ( "*EasyOpts_".a:action."_Option_Type_".l:type )
 		return "EasyOpts_".a:action."_Option_Type_".l:type
-	elseif index ( g:easyopts_known_types, l:type ) >= 0 
+	elseif index ( g:easyopts_known_types, l:type ) >= 0
 		return "s:".a:action."_Option_Type_".l:type
 	else
 		echoe "Unknown type '".l:type."' (using string)"
@@ -76,22 +88,22 @@ function s:Get_Option_Type_Boolean ( name, current )
 	else
 		return 0
 	endif
-endfunction 
+endfunction
 
 function s:Get_Option_Type_Float ( name, current )
 	let l:tmp = input ( "Insert value for '".a:name."': " )
 	return l:tmp
-endfunction 
+endfunction
 
 function s:Get_Option_Type_Integer ( name, current )
 	let l:tmp = input ( "Insert value for '".a:name."': " )
 	return l:tmp
-endfunction 
+endfunction
 
 function s:Get_Option_Type_Path ( name, current )
 	let l:tmp = input ( "Insert path for '".a:name."': ", "", "file" )
 	return l:tmp
-endfunction 
+endfunction
 
 function s:Get_Option_Type_String ( name, current )
 	let l:tmp = input ( "Insert value for '".a:name."': " )
@@ -135,7 +147,7 @@ function s:Put_Option (option,forward)
 	execute ":let l:tmpPut .= PutCB ( ".l:tmpList[ 2 ]." )"
 
 	if a:forward
-		put =l:tmpPut	
+		put =l:tmpPut
 	else
 		-1put =l:tmpPut
 	endif
@@ -151,10 +163,30 @@ function EasyOpts_Init ( optList )
 	let lists = a:optList
 
 	for opt in lists
-		if !exists ( expand ( opt[ 2 ] ) )
+		if !exists ( expand ( opt[ 2 ] ) ) || exists ( "s:easyopts_defaults" )
 			execute "let ".opt[ 2 ]." = \"".opt[ 3 ]."\""
 		endif
 	endfor
+endfunction
+
+ """""""""""""""
+" Save Function "
+"               "
+ """""""""""""""
+function EasyOpts_Menu_Save ( )
+	let lists = s:current_menu
+
+	execute "edit! ".$HOME."/.vim/easyopts.sav"
+
+	for opt in lists
+		silent! execute "g/^let ".expand ( opt[ 2 ] )."/d"
+		execute "let l:value = " . opt[ 2 ]
+		let l:out = "let ".opt[ 2 ]." = \"".l:value."\"\n"
+		put =l:out
+	endfor
+
+	write
+	bdelete
 endfunction
 
  """""""""""""""
@@ -165,10 +197,11 @@ function EasyOpts_Menu_Open ( menuTitle, optList )
 	call EasyOpts_Menu_Close()
 
 	let lists = a:optList
+	let s:current_menu_title = a:menuTitle
 	let s:current_menu = a:optList
 
 	let l:numitems = len ( lists )
-	execute "bo ".( len( lists ) + 3 )."new"
+	execute "bo ".( len( lists ) + 5 )."new"
 
 	let out = "   ".a:menuTitle
 	put =out
@@ -177,17 +210,20 @@ function EasyOpts_Menu_Open ( menuTitle, optList )
 		call s:Put_Option ( opt, 1 )
 	endfor
 
+	let out = "\n    [q] -> quit (temporary save) - [s] -> quit (permanent save) - [d] -> set default value - [D] -> set defaults all\n"
+	put =out
+
 	let out = "\n"
 	put =out
-	
+
 	setlocal nonumber
 	setlocal wrap
 	setlocal nomodifiable
 	setlocal buftype=nofile
 	setlocal bufhidden=delete
 	setlocal nobuflisted
-	
-	let s:current_menu_buffer = bufname ( "%" )
+
+	let s:current_menu_buffer = bufnr ( "%" )
 
 	call cursor ( 3, 5 )
 	nnoremap <silent> <buffer> <CR>	:call EasyOpts_Menu_Update_Option()<CR>
@@ -206,6 +242,10 @@ function EasyOpts_Menu_Open ( menuTitle, optList )
 	nnoremap <silent> <buffer> b		<Nop>
 	nnoremap <silent> <buffer> <Space>	<Nop>
 	nnoremap <silent> <buffer> <BS>		<Nop>
+	nnoremap <silent> <buffer> q		:call EasyOpts_Menu_Close()<CR>
+	nnoremap <silent> <buffer> s		:call EasyOpts_Menu_Save()<CR>
+	nnoremap <silent> <buffer> d		:call EasyOpts_Menu_Set_Default()<CR>
+	nnoremap <silent> <buffer> D		:call EasyOpts_Menu_All_Defaults()<CR>
 endfunction
 
 function PrevMenuItem ()
@@ -245,29 +285,47 @@ function EasyOpts_Menu_Update_Option ()
 	let CheckCB = function ( s:Get_Callback ( "Check", sublist[ 1 ] ) )
 
 	execute ":let l:prevalue = ".sublist[ 2 ]
-	execute ":let l:tmp = GetCB ( sublist[ 0 ], ".sublist[ 2 ]." )"
-	let l:allowed = CheckCB ( l:tmp )
 
-	if l:allowed == 0
-		echohl ErrorMsg
-		echo "Invalid value for type ".sublist[ 1 ]
-		echohl None
-		let l:tmp = l:prevalue
+	if !exists ( "s:easyopts_defaults" )
+		execute ":let l:tmp = GetCB ( sublist[ 0 ], ".sublist[ 2 ]." )"
+		let l:allowed = CheckCB ( l:tmp )
+
+		if l:allowed == 0
+			echohl ErrorMsg
+			echo "Invalid value for type ".sublist[ 1 ]
+			echohl None
+			let l:tmp = l:prevalue
+		endif
+	else
+		let l:tmp = expand ( sublist[ 3 ] )
 	endif
 
 	execute "let ".sublist[ 2 ]." = l:tmp"
 	setlocal modifiable
-	delete 
+	delete
 	call s:Put_Option ( sublist, 0 )
 	setlocal nomodifiable
 	echo
 endfunction
 
+function EasyOpts_Menu_Set_Default ()
+	let s:easyopts_defaults = 1
+	call EasyOpts_Menu_Update_Option()
+	unlet s:easyopts_defaults
+endfunction
+
+function EasyOpts_Menu_All_Defaults ()
+	let s:easyopts_defaults = 1
+	call EasyOpts_Init ( s:current_menu )
+	call EasyOpts_Menu_Open ( s:current_menu_title, s:current_menu )
+	unlet s:easyopts_defaults
+endfunction
+
 function EasyOpts_Menu_Close ()
 	if exists ( "s:current_menu_buffer" ) && bufexists ( s:current_menu_buffer )
-		bdelete s:current_menu_buffer
+		execute "bdelete ".s:current_menu_buffer
 		unlet s:current_menu
-		nunmap <Enter>
+		unlet s:current_menu_title
 		return 1
 	endif
 

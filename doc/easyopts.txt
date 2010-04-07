@@ -1,11 +1,11 @@
-*easyopts.txt*      For Vim version 7.0. 
+*easyopts.txt*      For Vim version 7.0.
 
-Author:	        HoX                             September 25, 2009
-Version:        0.1
+Author:	        HoX                             April 07, 2010
+Version:        0.2
 
 For instructions on installing this file, type
 	:help add-local-help |add-local-help| inside Vim.
-    
+
 
 ==============================================================================
 1. Contents                                     *easyopts* *easyopts-contents*
@@ -22,7 +22,7 @@ For instructions on installing this file, type
        4.3 EasyOpts_Menu_Close................: |easyopts-menuclose|
     5. Usage .................................: |easyopts-usage|
        5.1 Example 1..........................: |easyopts-example1|
-    6. History................................: |easyopts-history|  
+    6. History................................: |easyopts-history|
 
 ==============================================================================
 2. Description                                          *easyopts-description*
@@ -32,7 +32,12 @@ writing others plugins. Therefore, unless you are writing a plugin, you won't
 need to read this help.
 
 The aim of this plugin is to ensure that all requested variables are setted with
-correct values and to provide an easy menu for following changes. 
+correct values and to provide an easy menu for following changes.
+
+Since version 0.2, the modified options could be saved or restored to the default
+value by the user. The commands to do this is listed under the menu itself.
+Any previously defined value (i.e. in the .vimrc) will be overwritten.
+The values are saved in the file ${HOME}/.vim/easyopts.sav
 
 ==============================================================================
 3. Variable management                                    *easyopts-varmanage*
@@ -62,7 +67,7 @@ The format of a sublist is the following: >
 
 As example, if I want to describes the user, I will have this: >
 
-	let uservars = [ 
+	let uservars = [
 		\[ "Name", "string", "g:user_name", "Goofy" ],
 		\[ "Age", "integer", "g:user_age", "18" ],
 		\[ "Home directory", "path", "g:user_home", "/home/goofy" ]
@@ -74,7 +79,7 @@ As example, if I want to describes the user, I will have this: >
 
 In this version of the plugin there are five supported types: boolean, float,
 integer, path, and string.
-	
+
     - Boolean: it could have 0 or 1 as value, but in the menu it shows "true"
      and false;
     - Float: a floating number in the format [-]xx.yyy. A more accurate
@@ -115,7 +120,7 @@ If you want to use EasyOpts, you should learn how to use only three simple
 functions.
 
 4.1 EasyOpts_Init                                          *easyopts-initfunc*
-	
+
 EasyOpts_Init(varstruct) initialize all the undeclared variables to their default
 values. If a variable is already defined, it won't be changed, so it preserve
 the user configuration.
@@ -163,7 +168,7 @@ First of all I must declare the variables struct >
 <
 
 Then I must initialize all the variables through the proper function (see
-|easyopts-initfunc|). I'll also write a new function to open (see 
+|easyopts-initfunc|). I'll also write a new function to open (see
 |easyopts-menuopen|) and close (see |easyopts-menuclose|) the menu, switching
 its current status >
 
@@ -179,27 +184,27 @@ its current status >
 <
 
 The work is almost done. The last thing is the declaration of the type
-"zodiac" or I'll get an error. 
+"zodiac" or I'll get an error.
 
 The implementation of the get-functions is really simple in this case. It
 simply ask to the user to insert a value for the zodiac type. If you want to
 do it better, you could put a completion function for the input. I don't need
 to know the current value, because I let the plugin check it automatically >
 
-    let s:zodiacs = [ 
-        \"Aries", "Taurus", "Gemini", "Cancer", 
-        \"Leo", "Virgo", "Libra", "Scorpio", 
+    let s:zodiacs = [
+        \"Aries", "Taurus", "Gemini", "Cancer",
+        \"Leo", "Virgo", "Libra", "Scorpio",
         \"Sagittarius", "Capricorn", "Acquarius", "Pisces"
     \]
 
     function Zodiac_complete ( ArgLead, CmdLine, CursorPos )
         let retList = []
 
-        for i in s:zodiacs 
+        for i in s:zodiacs
             if match ( i, "^".a:ArgLead.".*" ) != -1
                 call add( retList, i )
             endif
-        endfor 
+        endfor
 
         return retList
     endfunction
@@ -214,7 +219,7 @@ After reading the value, the EasyOpts plugin check its value internally. If it
 is correct, the new value is assigned to the variable, otherwise an error is
 shown and the previous value is used. In this example I'll check if the zodiac
 is known. >
-	
+
     function EasyOpts_Check_Option_Type_Zodiac ( value )
 		if index ( s:zodiacs, a:value ) == -1
 			return 0
@@ -237,14 +242,18 @@ In the end I should implement the put-function. I'll simply return the value.
 That's all!
 
 ==============================================================================
-6. History                                                  *easyopts-history*  
+6. History                                                  *easyopts-history*
 
     Release 0.1
      - First release of the plugin
          Features:
             * Five built-in types: Boolean, Float, Integer, Path, String
             * New type customization
-            * Variable initialization 
+            * Variable initialization
             * Easy to use menu for editing variables
+    Release 0.2
+	 - Saving options
+	 - Ability to restore the default values
+	 - Fixed a bug in EasyOpts_Menu_Close()
 
 vim: ts=4 ft=help tw=78
